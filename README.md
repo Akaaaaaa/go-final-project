@@ -17,13 +17,13 @@
 - запуск с паролем export TODO_PASSWORD=12345 go run main.go 
 - тесты ОБЯЗАТЕЛЬНО после запуска в терминале запускать :
 
-    go test -run ^TestApp$ ./tests
-    go test -run ^TestDB$ ./tests
-    go test -run ^TestNextDate$ ./tests
-    go test -run ^TestAddTask$ ./tests 
-    go test -run ^TestTasks$ ./tests
-    go test -run ^TestEditTask$ ./tests
-    Или же просто проверить все тесты одновременно go test ./tests или go test ./tests -v
+    -go test -run ^TestApp$ ./tests
+    -go test -run ^TestDB$ ./tests
+    -go test -run ^TestNextDate$ ./tests
+    -go test -run ^TestAddTask$ ./tests 
+    -go test -run ^TestTasks$ ./tests
+    -go test -run ^TestEditTask$ ./tests
+    -Или же просто проверить все тесты одновременно go test ./tests или go test ./tests -v
 
 - http://localhost:7540 откройте после в браузере
 
