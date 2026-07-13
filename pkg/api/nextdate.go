@@ -1,7 +1,7 @@
 package api
 
 import (
-	"encoding/json" // ===== ДОБАВЛЕНО: для отправки JSON ошибок =====
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -14,7 +14,6 @@ const DateFormat = "20060102"
 func NextDate(now time.Time, dateStr string, repeat string) (string, error) {
 	date, err := time.Parse(DateFormat, dateStr)
 	if err != nil {
-		// ===== ИСПРАВЛЕНО: стиль ошибок (с маленькой буквы) =====
 		return "", fmt.Errorf("неверный формат даты: %v", err)
 	}
 	if repeat == "" {
@@ -23,7 +22,6 @@ func NextDate(now time.Time, dateStr string, repeat string) (string, error) {
 
 	parts := strings.Fields(repeat)
 	if len(parts) == 0 {
-		// ===== ИСПРАВЛЕНО: стиль ошибок (с маленькой буквы) =====
 		return "", fmt.Errorf("неверный формат правила повторения: %v", err)
 	}
 
@@ -32,12 +30,10 @@ func NextDate(now time.Time, dateStr string, repeat string) (string, error) {
 	switch rule {
 	case "d":
 		if len(parts) != 2 {
-			// ===== ИСПРАВЛЕНО: стиль ошибок (с маленькой буквы) =====
 			return "", fmt.Errorf("для правила 'd' требуется указать количество дней: %v", err)
 		}
 		days, err := strconv.Atoi(parts[1])
 		if err != nil || days <= 0 || days > 400 {
-			// ===== ИСПРАВЛЕНО: стиль ошибок (с маленькой буквы) =====
 			return "", fmt.Errorf("неверное количество дней: %v", err)
 		}
 		for {
@@ -48,7 +44,6 @@ func NextDate(now time.Time, dateStr string, repeat string) (string, error) {
 		}
 	case "y":
 		if len(parts) != 1 {
-			// ===== ИСПРАВЛЕНО: стиль ошибок (с маленькой буквы) =====
 			return "", fmt.Errorf("для правила 'y' не требуется дополнительных параметров: %v", err)
 		}
 		for {
@@ -59,7 +54,6 @@ func NextDate(now time.Time, dateStr string, repeat string) (string, error) {
 		}
 	case "w":
 		if len(parts) != 2 {
-			// ===== ИСПРАВЛЕНО: стиль ошибок (с маленькой буквы) =====
 			return "", fmt.Errorf("для правила 'w' требуется указать количество недель: %v", err)
 		}
 
@@ -68,7 +62,6 @@ func NextDate(now time.Time, dateStr string, repeat string) (string, error) {
 		for _, d := range weekDays {
 			dayNum, err := strconv.Atoi(d)
 			if err != nil || dayNum < 1 || dayNum > 7 {
-				// ===== ИСПРАВЛЕНО: стиль ошибок (с маленькой буквы) =====
 				return "", fmt.Errorf("недопустимый день недели: %v", err)
 			}
 			validDays[dayNum] = true
@@ -92,7 +85,6 @@ func NextDate(now time.Time, dateStr string, repeat string) (string, error) {
 			daysStr = parts[1]
 			monthStr = parts[2]
 		} else {
-			// ===== ИСПРАВЛЕНО: стиль ошибок (с маленькой буквы) =====
 			return "", fmt.Errorf("неверный формат правила")
 		}
 		validDays := make(map[int]bool)
@@ -100,11 +92,9 @@ func NextDate(now time.Time, dateStr string, repeat string) (string, error) {
 		for _, d := range dayParts {
 			dayNum, err := strconv.Atoi(d)
 			if err != nil {
-				// ===== ИСПРАВЛЕНО: стиль ошибок (с маленькой буквы) =====
 				return "", fmt.Errorf("неверный день месяца: %v", err)
 			}
 			if dayNum < -2 || dayNum == 0 || dayNum > 31 {
-				// ===== ИСПРАВЛЕНО: стиль ошибок (с маленькой буквы) =====
 				return "", fmt.Errorf("число вышло за пределы")
 			}
 			validDays[dayNum] = true
@@ -119,7 +109,6 @@ func NextDate(now time.Time, dateStr string, repeat string) (string, error) {
 			for _, m := range monthParts {
 				monthNum, err := strconv.Atoi(m)
 				if err != nil || monthNum < 1 || monthNum > 12 {
-					// ===== ИСПРАВЛЕНО: стиль ошибок (с маленькой буквы) =====
 					return "", fmt.Errorf("неверный номер месяца: %s", m)
 				}
 				validMonth[monthNum] = true
@@ -154,14 +143,10 @@ func NextDate(now time.Time, dateStr string, repeat string) (string, error) {
 			}
 		}
 	default:
-		// ===== ИСПРАВЛЕНО: стиль ошибок (с маленькой буквы) =====
 		return "", fmt.Errorf("неподдерживаемый формат правила: %s", rule)
 	}
 }
 
-// ===== ИСПРАВЛЕНО: NextDateHandler возвращает JSON при ошибках =====
-// Раньше при ошибке возвращался пустой ответ или текст
-// Теперь все ошибки возвращаются в формате JSON
 func NextDateHandler(w http.ResponseWriter, r *http.Request) {
 	nowStr := r.FormValue("now")
 	dateStr := r.FormValue("date")
@@ -175,7 +160,6 @@ func NextDateHandler(w http.ResponseWriter, r *http.Request) {
 	} else {
 		now, err = time.Parse(DateFormat, nowStr)
 		if err != nil {
-			// ===== ИСПРАВЛЕНО: возвращаем JSON ошибку вместо http.Error =====
 			w.Header().Set("Content-Type", "application/json; charset=utf-8")
 			w.WriteHeader(http.StatusBadRequest)
 			json.NewEncoder(w).Encode(map[string]string{"error": "Неверный формат даты 'now'. Ожидается YYYYMMDD"})
@@ -185,14 +169,12 @@ func NextDateHandler(w http.ResponseWriter, r *http.Request) {
 
 	nextDate, err := NextDate(now, dateStr, repeat)
 	if err != nil {
-		// ===== ИСПРАВЛЕНО: возвращаем JSON ошибку вместо http.Error =====
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 		return
 	}
 
-	// Успешный ответ - текстовая строка (как и было)
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(nextDate))
