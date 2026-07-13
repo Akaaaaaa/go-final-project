@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/json"
 	"fmt"
+	"go-final/pkg/models"
 	"log"
 	"net/http"
 	"time"
@@ -10,7 +11,7 @@ import (
 	"go1f/pkg/db"
 )
 
-func checkDate(task *db.Task) error {
+func checkDate(task *models.Task) error {
 	now := time.Now()
 
 	if task.Date == "" {
@@ -44,7 +45,7 @@ func checkDate(task *db.Task) error {
 }
 
 func addTaskHandler(w http.ResponseWriter, r *http.Request) {
-	var task db.Task
+	var task models.Task
 
 	err := json.NewDecoder(r.Body).Decode(&task)
 	if err != nil {
