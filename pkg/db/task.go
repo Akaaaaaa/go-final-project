@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"go-final/pkg/models"
 )
 
 const (
@@ -15,14 +16,6 @@ const (
 	queryTask       = `SELECT id, date, title, comment, repeat FROM scheduler ORDER BY date LIMIT ?`
 	queryAddTask    = `INSERT INTO scheduler (date, title, comment, repeat) VALUES (?, ?, ?, ?)`
 )
-
-type Task struct {
-	ID      string `json:"id"`
-	Date    string `json:"date"`
-	Title   string `json:"title"`
-	Comment string `json:"comment"`
-	Repeat  string `json:"repeat"`
-}
 
 func DeleteTask(ctx context.Context, id string) error {
 	_, err := DB.ExecContext(ctx, queryDeleteTask, id)
@@ -39,8 +32,8 @@ func UpdateDate(ctx context.Context, nextDate string, id string) error {
 	}
 	return nil
 }
-func GetTask(ctx context.Context, id string) (*Task, error) {
-	var t Task
+func GetTask(ctx context.Context, id string) (*models.Task, error) {
+	var t models.Task
 	err := DB.QueryRowContext(ctx, queryGetTask, id).Scan(&t.ID, &t.Date, &t.Title, &t.Comment, &t.Repeat)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -51,7 +44,7 @@ func GetTask(ctx context.Context, id string) (*Task, error) {
 	return &t, nil
 }
 
-func UpdateTask(ctx context.Context, task *Task) error {
+func UpdateTask(ctx context.Context, task *models.Task) error {
 	res, err := DB.ExecContext(ctx, queryUpdateTask, task.Date, task.Title, task.Comment, task.Repeat, task.ID)
 	if err != nil {
 		return fmt.Errorf("Не удалось обновить задачу: %w", err)
@@ -68,8 +61,8 @@ func UpdateTask(ctx context.Context, task *Task) error {
 	return nil
 }
 
-func Tasks(ctx context.Context, limit int) ([]Task, error) {
-	tasks := []Task{}
+func Tasks(ctx context.Context, limit int) ([]models.Task, error) {
+	tasks := []models.Task{}
 	rows, err := DB.QueryContext(ctx, queryTask, limit)
 	if err != nil {
 		return nil, err
@@ -77,7 +70,7 @@ func Tasks(ctx context.Context, limit int) ([]Task, error) {
 	defer rows.Close()
 
 	for rows.Next() {
-		var t Task
+		var t models.Task
 		err = rows.Scan(&t.ID, &t.Date, &t.Title, &t.Comment, &t.Repeat)
 		if err != nil {
 			return nil, err
@@ -92,7 +85,7 @@ func Tasks(ctx context.Context, limit int) ([]Task, error) {
 	return tasks, nil
 }
 
-func AddTask(ctx context.Context, task *Task) (int64, error) {
+func AddTask(ctx context.Context, task *models.Task) (int64, error) {
 	res, err := DB.ExecContext(ctx, queryAddTask, task.Date, task.Title, task.Comment, task.Repeat)
 	if err != nil {
 		return 0, err

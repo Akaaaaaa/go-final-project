@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/json"
 	"fmt"
+	"go-final/pkg/models"
 	"io"
 	"log"
 	"net/http"
@@ -115,7 +116,7 @@ func getTasksHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("=== getTasksHandler START ===")
 
 	limitStr := r.URL.Query().Get("limit")
-	limit := 50 // значение по умолчанию
+	limit := 50
 	if limitStr != "" {
 		if l, err := strconv.Atoi(limitStr); err == nil && l > 0 {
 			limit = l
@@ -125,7 +126,7 @@ func getTasksHandler(w http.ResponseWriter, r *http.Request) {
 	if limit == 0 {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(map[string][]db.Task{"tasks": {}})
+		json.NewEncoder(w).Encode(map[string][]models.Task{"tasks": {}})
 		return
 	}
 
@@ -139,12 +140,12 @@ func getTasksHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if tasks == nil {
-		tasks = []db.Task{}
+		tasks = []models.Task{}
 	}
 
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string][]db.Task{"tasks": tasks})
+	json.NewEncoder(w).Encode(map[string][]models.Task{"tasks": tasks})
 }
 
 func getTaskHandler(w http.ResponseWriter, r *http.Request) {
@@ -170,7 +171,7 @@ func getTaskHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func updateTaskHandler(w http.ResponseWriter, r *http.Request) {
-	var task db.Task
+	var task models.Task
 
 	if err := json.NewDecoder(r.Body).Decode(&task); err != nil {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
