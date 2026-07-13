@@ -5,7 +5,15 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"log"
+)
+
+const (
+	queryDeleteTask = `DELETE FROM scheduler WHERE id = ?`
+	queryUpdateDate = `UPDATE scheduler SET date = ? WHERE id = ?`
+	queryGetTask    = `SELECT id, date, title, comment, repeat FROM scheduler WHERE id = ?`
+	queryUpdateTask = `UPDATE scheduler SET date = ?, title = ?, comment = ?, repeat = ? WHERE id = ?`
+	queryTask       = `SELECT id, date, title, comment, repeat FROM scheduler ORDER BY date LIMIT ?`
+	queryAddTask    = `INSERT INTO scheduler (date, title, comment, repeat) VALUES (?, ?, ?, ?)`
 )
 
 type Task struct {
@@ -17,12 +25,7 @@ type Task struct {
 }
 
 func DeleteTask(ctx context.Context, id string) error {
-	if DB == nil {
-		return fmt.Errorf("база данных не инициализирована")
-	}
-
-	query := `DELETE FROM scheduler WHERE id = ?`
-	_, err := DB.ExecContext(ctx, query, id)
+	_, err := DB.ExecContext(ctx, queryDeleteTask, id)
 	if err != nil {
 		return fmt.Errorf("не удалось удалить задачу: %w", err)
 	}
@@ -30,8 +33,7 @@ func DeleteTask(ctx context.Context, id string) error {
 }
 
 func UpdateDate(ctx context.Context, nextDate string, id string) error {
-	query := `UPDATE scheduler SET date = ? WHERE id = ?`
-	_, err := DB.ExecContext(ctx, query, nextDate, id)
+	_, err := DB.ExecContext(ctx, queryUpdateDate, nextDate, id)
 	if err != nil {
 		return fmt.Errorf("Не удалось обновить дату задачи: %w", err)
 	}
@@ -39,12 +41,10 @@ func UpdateDate(ctx context.Context, nextDate string, id string) error {
 }
 func GetTask(ctx context.Context, id string) (*Task, error) {
 	var t Task
-	query := `SELECT id, date, title, comment, repeat FROM scheduler WHERE id = ?`
-
-	err := DB.QueryRowContext(ctx, query, id).Scan(&t.ID, &t.Date, &t.Title, &t.Comment, &t.Repeat)
+	err := DB.QueryRowContext(ctx, queryGetTask, id).Scan(&t.ID, &t.Date, &t.Title, &t.Comment, &t.Repeat)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("Задача не найдена: %w", err) // Задача не найдена
+			return nil, fmt.Errorf("Задача не найдена: %w", err)
 		}
 		return nil, err
 	}
@@ -52,9 +52,7 @@ func GetTask(ctx context.Context, id string) (*Task, error) {
 }
 
 func UpdateTask(ctx context.Context, task *Task) error {
-	query := `UPDATE scheduler SET date = ?, title = ?, comment = ?, repeat = ? WHERE id = ?`
-
-	res, err := DB.ExecContext(ctx, query, task.Date, task.Title, task.Comment, task.Repeat, task.ID)
+	res, err := DB.ExecContext(ctx, queryUpdateTask, task.Date, task.Title, task.Comment, task.Repeat, task.ID)
 	if err != nil {
 		return fmt.Errorf("Не удалось обновить задачу: %w", err)
 	}
@@ -71,34 +69,10 @@ func UpdateTask(ctx context.Context, task *Task) error {
 }
 
 func Tasks(ctx context.Context, limit int) ([]Task, error) {
-	log.Println("=== db.Tasks START ===")
 	tasks := []Task{}
-
-	if DB == nil {
-		log.Println("ОШИБКА: DB == nil")
-		return tasks, fmt.Errorf("база данных не инициализирована")
-	}
-
-	log.Println("Проверяем существование таблицы...")
-	var tableName string
-	err := DB.QueryRow("SELECT name FROM sqlite_master WHERE type='table' AND name='scheduler'").Scan(&tableName)
+	rows, err := DB.QueryContext(ctx, queryTask, limit)
 	if err != nil {
-		log.Printf("Таблица не найдена, ошибка: %v", err)
-		log.Println("Создаем таблицу...")
-		if _, err := DB.Exec(schema); err != nil {
-			log.Printf("Ошибка создания таблицы: %v", err)
-			return tasks, fmt.Errorf("не удалось создать таблицу: %w", err)
-		}
-		log.Println("Таблица создана")
-	} else {
-		log.Printf("Таблица найдена: %s", tableName)
-	}
-
-	log.Printf("Выполняем запрос с limit=%d", limit)
-	rows, err := DB.QueryContext(ctx, "SELECT id, date, title, comment, repeat FROM scheduler ORDER BY date LIMIT ?", limit)
-	if err != nil {
-		log.Printf("Ошибка запроса: %v", err)
-		return tasks, err
+		return nil, err
 	}
 	defer rows.Close()
 
@@ -106,24 +80,20 @@ func Tasks(ctx context.Context, limit int) ([]Task, error) {
 		var t Task
 		err = rows.Scan(&t.ID, &t.Date, &t.Title, &t.Comment, &t.Repeat)
 		if err != nil {
-			log.Printf("Ошибка сканирования: %v", err)
-			return tasks, err
+			return nil, err
 		}
 		tasks = append(tasks, t)
 	}
 
 	if err = rows.Err(); err != nil {
-		log.Printf("Ошибка rows.Err(): %v", err)
-		return tasks, err
+		return nil, err
 	}
 
-	log.Printf("db.Tasks возвращает %d задач", len(tasks))
 	return tasks, nil
 }
 
 func AddTask(ctx context.Context, task *Task) (int64, error) {
-	query := `INSERT INTO scheduler (date, title, comment, repeat) VALUES (?, ?, ?, ?)`
-	res, err := DB.ExecContext(ctx, query, task.Date, task.Title, task.Comment, task.Repeat)
+	res, err := DB.ExecContext(ctx, queryAddTask, task.Date, task.Title, task.Comment, task.Repeat)
 	if err != nil {
 		return 0, err
 	}
